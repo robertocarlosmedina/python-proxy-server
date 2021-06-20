@@ -10,7 +10,7 @@ if (len(sys.argv)<= 1):
 tcpSerSock = socket(AF_INET, SOCK_STREAM)
 tcpSerSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) ## I the port is in use this instruction will and
                                                                   # the process in the port to make it able to be use
-tcpSerSock.bind((sys.argv[1], 8888))
+tcpSerSock.bind((sys.argv[1], 3002))
 tcpSerSock.listen(100)
 
 while 1:
@@ -23,11 +23,12 @@ while 1:
     # Extract the filename from the given message
     print (message.split()[1])
     # .partition("/")[2]
-    print(message.split()[1].partition("/")[2])
-    filename = message.split()[1].partition("/")[2]
+    #print(message.split()[1].partition("/")[2])
+    filename = message.split()[1]
     print (filename)
     fileExist = "false"
-    filetouse = "/" + filename
+    # filetouse = "/" + filename
+    filetouse = filename
     print (filetouse)
     try:
         # Check wether the file exist in the cache
@@ -36,11 +37,12 @@ while 1:
         fileExist = "true"
         # ProxyServer finds a cache hit and generates a response message
 
-        tcpCliSock.send("HTTP/1.0 200 OK\r\n")
-        tcpCliSock.send("Content-Type:text/html\r\n")
+        tcpCliSock.send(bytes("HTTP/1.0 200 OK\r\n", 'utf-8'))
+        tcpCliSock.send(bytes("Content-Type:text/html\r\n", 'utf-8'))
         for i in range(0, len(outputdata)):
-            tcpCliSock.send(outputdata[i])
+            tcpCliSock.send(bytes(outputdata[i], 'utf-8'))
             print ('Read from cache')
+        print(fileExist)
 
     # Error handling for file not found in cache
     except IOError:
@@ -48,14 +50,14 @@ while 1:
             # Create a socket on the proxyserver
             c = socket(AF_INET, SOCK_STREAM)
 
-            hostn = filename.replace("www.","",1)
+            hostn = filename.replace(bytes("www.", 'utf-8'),bytes("", 'utf-8'),1)
             print (hostn)
             try:
                 # Connect to the socket to port 80
                 c.connect((hostn, 80))
                 # Create a temporary file on this socket and ask port 80 for the file requested by the client
                 fileobj = c.makefile('r', 0)
-                fileobj.write("GET "+"http://" + filename + "HTTP/1.0\n\n")
+                fileobj.write(bytes("GET "+"http://" + filename + "HTTP/1.0\n\n", 'utf-8'))
 
                 # Read the response into buffer
                 buff = fileobj.readlines()
@@ -73,10 +75,10 @@ while 1:
 
     else:
             # HTTP response message for file not found
-        tcpCliSock.send("HTTP/1.0 404 sendErrorErrorError\r\n")
+        tcpCliSock.send(bytes("HTTP/1.0 404 sendErrorErrorError\r\n", 'utf-8'))
 
-        tcpCliSock.send("Content-Type:text/html\r\n")
-        tcpCliSock.send("\r\n")
+        tcpCliSock.send(bytes("Content-Type:text/html\r\n", 'utf-8'))
+        tcpCliSock.send(bytes("\r\n", 'utf-8'))
 
     # Close the client and the server sockets
     tcpCliSock.close()
