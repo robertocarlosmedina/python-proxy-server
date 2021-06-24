@@ -1,27 +1,22 @@
 from socket import *
+import json  
 import sys
 
 def Get(message):
     # Extract the filename from the given message
-    # .partition("/")[2]
-    #print(message.split()[1].partition("/")[2])
     filename = message.split()[1]
-    print (filename)
-    fileExist = "false"
-    # filetouse = "/" + filename
+    print ("\n[GET Request] \nRequest body: \n", filename, "\n")
     try:
         # Check wether the file exist in the cache
         f = open(filename[1:], "r")
         outputdata = f.readlines()
-        fileExist = "true"
         # ProxyServer finds a cache hit and generates a response message
 
         tcpCliSock.send(bytes("HTTP/1.0 200 OK\r\n", 'utf-8'))
         tcpCliSock.send(bytes("Content-Type:text/html\r\n", 'utf-8'))
         for i in range(0, len(outputdata)):
             tcpCliSock.send(bytes(outputdata[i], 'utf-8'))
-            print ('Read from cache')
-        print(fileExist)
+        print ('Read from cache')
 
     # Error handling for file not found in cache
     except IOError:
@@ -33,11 +28,17 @@ def Get(message):
 
 
 def Post(message):
-    anwser = message.decode().split("\n")[-1]
-    print("\n\n\n",anwser,"\n\n")
-    tcpCliSock.send(bytes("HTTP/1.0 200 OK\r\n", 'utf-8'))
-    tcpCliSock.send(bytes("Content-Type:text/html\r\n", 'utf-8'))
-    print("ok: post")
+    try:
+        anwser = message.decode().split("\n")[-1]
+        anwser = anwser.split("&")
+        dictAnswer = {anwser[0].split("=")[0]: anwser[0].split("=")[1],anwser[1].split("=")[0]: anwser[1].split("=")[1] }
+        print("\n[POST Request] \nRequest body: ",dictAnswer,"\n")
+        tcpCliSock.send(bytes("HTTP/1.0 200 OK\r\n", 'utf-8'))
+        tcpCliSock.send(bytes("Content-Type:text/html\r\n", 'utf-8'))
+    except IOError:
+        tcpCliSock.send(bytes("HTTP/1.0 404 sendErrorErrorError\r\n", 'utf-8'))
+        tcpCliSock.send(bytes("Content-Type:text/html\r\n", 'utf-8'))
+        tcpCliSock.send(bytes("\r\n", 'utf-8'))
 
 
 if (len(sys.argv)<= 1):
@@ -49,7 +50,7 @@ if (len(sys.argv)<= 1):
 tcpSerSock = socket(AF_INET, SOCK_STREAM)
 tcpSerSock.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1) ## I the port is in use this instruction will and
                                                                   # the process in the port to make it able to be use
-tcpSerSock.bind((sys.argv[1], 3001))
+tcpSerSock.bind((sys.argv[1], 3002))
 tcpSerSock.listen(100)
 
 while 1:
